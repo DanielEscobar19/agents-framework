@@ -75,29 +75,54 @@ Indexing Pipeline
 
 ---
 
+---
+
 # ⚙️ Components
 
 ## 1. FileScanner
 
 Scans repository and returns files to index.
 
-## 2. Chunker
+## 2. Chunker Factory
 
-Splits file content into logical chunks for embedding.
+Selects the correct chunker based on file type:
 
-## 3. OllamaEmbedder
+- PythonChunker (AST-based)
+- CSharpChunker (regex + structure heuristics)
+- MarkdownChunker (heading-based segmentation)
+- LineChunker (fallback strategy)
 
-Generates embeddings using a local model (e.g. `nomic-embed-text`).
+## 3. Chunkers
 
-## 4. QdrantService
+Each chunker produces:
+
+- text
+- start_line
+- end_line
+- element_type
+- metadata (language-specific enrichment)
+
+## 4. ChunkNormalizer
+
+Ensures every chunk has:
+
+- deterministic chunk_hash
+- file context metadata
+- stable identity across re-indexing
+
+## 5. OllamaEmbedder
+
+Generates embeddings using a local model (e.g. nomic-embed-text).
+
+## 6. QdrantService
 
 Handles:
 
 - vector storage
-- deletion
+- deletion by file
 - semantic search
 
-## 5. SQLiteState
+## 7. SQLiteState
 
 Stores file-level metadata:
 
@@ -105,24 +130,28 @@ Stores file-level metadata:
 - file hash
 - last indexed timestamp
 
-Used for incremental indexing.
+Used for incremental indexing and change detection.
 
 ---
 
 # 🔁 Indexing Pipeline
 
 ```text
-1. Scan files
-2. Compute file hash
-3. Check SQLite state
-   ├─ unchanged → skip
-   └─ changed → continue
-4. Ensure Qdrant collection exists
-5. Delete old vectors (if file changed)
-6. Chunk file
-7. Embed chunks
-8. Store in Qdrant
-9. Update SQLite state
+1.Scan files
+2.Compute file hash (md5 of file content)
+3.Check SQLite state
+   ├─ file not in DB → index
+   ├─ hash unchanged → skip
+   └─ hash changed → reindex
+4.Sync deletions (remove missing files from Qdrant + SQLite)
+5.Ensure Qdrant collection exists
+6.Delete old vectors for changed files
+7.Select chunker via factory
+8.Chunk file into semantic units
+9.Normalize chunks (generate chunk_hash)
+10.Embed chunks
+11.Store in Qdrant with deterministic ID
+12.Update SQLite state
 ```
 
 ---
@@ -130,8 +159,11 @@ Used for incremental indexing.
 # 🧠 Incremental Indexing Logic
 
 ```python
-if not file_changed and qdrant_exists:
+if state.has_changed(file_path, file_hash):
+    reindex_file()
+else:
     skip_file()
+
 ```
 
 Ensures:
@@ -140,17 +172,29 @@ Ensures:
 - fast re-runs
 - persistent memory across sessions
 
+Additionally:
+
+```python
+sync_deletions(current_files)
+```
+
+Ensures deleted files are removed from both:
+
+- SQLite state
+- Qdrant vector DB
+
 ---
 
 # 🧩 Storage Strategy
 
-## SQLite (Control Layer)
+## SQLite (Control Plane)
 
 Used for:
 
 - file hashes
 - change detection
-- indexing state
+- deletion tracking
+- incremental indexing state
 
 ## Qdrant (Memory Layer)
 
@@ -158,7 +202,25 @@ Used for:
 
 - embeddings
 - semantic search
-- code retrieval
+- chunk-level retrieval
+
+---
+
+# 🧬 Chunk Identity System
+
+Each chunk has a deterministic identity:
+
+```python
+chunk.metadata.chunk_hash = md5(
+    file_path + start_line + end_line + element_type + text
+)
+```
+
+Used as:
+
+- Qdrant point ID
+- deduplication key
+- stable re-indexing reference
 
 ---
 
@@ -166,29 +228,36 @@ Used for:
 
 ### 1. Separation of concerns
 
-- SQLite = control plane
-- Qdrant = semantic memory
+- SQLite = control layer (state)
+- Chunkers = structure layer
+- Normalizer = identity layer
+- Qdrant = memory laye
 
-### 2. Deterministic chunk IDs
+### 2. Language-aware chunking
 
-Ensures stable updates:
+Each file type has a specialized strategy:
 
-```python
-md5(file_path + chunk_index + chunk_text)
-```
+- AST parsing (Python)
+- Regex structure detection (C#)
+- heading segmentation (Markdown)
+- fallback line chunking
 
 ### 3. Incremental indexing
 
 Avoids reprocessing unchanged files.
 
+### 4. Deterministic chunk identity
+
+Prevents duplicate embeddings and enables safe updates.
+
 ---
 
 # ⚠️ Current Limitations
 
-- No chunk-level diffing yet
-- Full file re-embedding on change
-- No async pipeline
-- No retrieval API (yet)
+- No chunk-level diffing (full file re-embedding on change)
+- No async indexing pipeline
+- No embedding cache layer
+- No retrieval API yet
 
 ---
 
@@ -197,26 +266,31 @@ Avoids reprocessing unchanged files.
 ## Phase 1 (DONE)
 
 - indexing pipeline
-- embeddings
+- chunking system
+- embedding layer
 - Qdrant integration
 - SQLite state tracking
+- deletion sync
 
 ## Phase 2 (NEXT)
 
-- chunk-level change detection
-- embedding optimization
+- chunk-level diff detection
+- smarter incremental updates (partial reindex)
+- embedding caching layer
 
 ## Phase 3
 
 - retrieval API (RAG engine)
+- context builder
 
 ## Phase 4
 
-- MCP server for agents
+- MCP server integration
+- agent tool exposure
 
 ## Phase 5
 
-- Copilot integration
+- VS Code Copilot-style integration
 
 ---
 
@@ -224,10 +298,10 @@ Avoids reprocessing unchanged files.
 
 Build a local AI system that can:
 
-- understand codebases semantically
+- understand entire codebases semantically
 - retrieve relevant code instantly
-- act as backend memory for agents
-- integrate with VSCode / Copilot
+- act as long-term memory for AI agents
+- power Copilot-style development workflows
 
 ---
 
@@ -237,8 +311,5 @@ Build a local AI system that can:
 - Qdrant (vector DB)
 - SQLite (state tracking)
 - Ollama (local embeddings)
+- AST + regex parsing
 - VSCode (future MCP integration)
-
-```
-
-```
