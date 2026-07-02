@@ -1,6 +1,6 @@
 from ollama import Client
 
-from agents_framework.config import config
+from config.config import config
 
 
 class OllamaEmbedder:

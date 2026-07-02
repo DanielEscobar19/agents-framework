@@ -1,7 +1,7 @@
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
 
-from agents_framework.config import config
+from config.config import config
 
 
 class QdrantService:
