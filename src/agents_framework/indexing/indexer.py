@@ -1,10 +1,12 @@
+from agents_framework.common.hash_utils import HashUtils
+from agents_framework.indexing.chunkers.factory import ChunkerFactory
+from agents_framework.indexing.normalizer.chunk_normalizer import ChunkNormalizer
 from agents_framework.indexing.scanner import FileScanner
-from agents_framework.indexing.chunker import Chunker
 from agents_framework.embeddings.ollama_embedder import OllamaEmbedder
 from agents_framework.storage.qdrant_service import QdrantService
 from agents_framework.storage.sqlite_state import SQLiteState
 from qdrant_client.models import Filter, FieldCondition, MatchValue
-import hashlib
+from dataclasses import asdict
 
 
 class Indexer:
@@ -14,136 +16,99 @@ class Indexer:
         self.state = SQLiteState()
 
         self.scanner = FileScanner(root_path)
-        self.chunker = Chunker()
+        self.chunker_factory = ChunkerFactory()
+        self.normalizer = ChunkNormalizer()
+
         self.embedder = OllamaEmbedder()
         self.qdrant = QdrantService()
 
     # -----------------------------
-    # Chunk ID
+    # Sync deletions
     # -----------------------------
-    def make_chunk_id(self, file_path: str, chunk_index: int, chunk_text: str) -> str:
-        raw = f"{file_path}:{chunk_index}:{chunk_text}"
-        return hashlib.md5(raw.encode()).hexdigest()
+    def sync_deletions(self, current_files: set[str]):
+
+        tracked_files = self.state.get_all_files()
+        deleted_files = tracked_files - current_files
+
+        for file in deleted_files:
+
+            print(f"🗑️ Deleting removed file: {file}")
+
+            self.qdrant.client.delete(
+                collection_name=self.qdrant.collection_name,
+                points_selector=Filter(
+                    must=[FieldCondition(key="file", match=MatchValue(value=file))]
+                ),
+            )
+
+            self.state.delete_file(file)
 
     # -----------------------------
-    # File hash
+    # Hashing the file content to detect changes
     # -----------------------------
     def hash_file(self, content: str) -> str:
-        return hashlib.md5(content.encode()).hexdigest()
+        return HashUtils.md5(content)
 
     # -----------------------------
-    # Check if file exists in Qdrant
-    # -----------------------------
-    def qdrant_file_exists(self, file_path: str) -> bool:
-        try:
-            result = self.qdrant.client.scroll(
-                collection_name=self.qdrant.collection_name,
-                scroll_filter=Filter(
-                    must=[FieldCondition(key="file", match=MatchValue(value=file_path))]
-                ),
-                limit=1,
-            )[0]
-
-            return len(result) > 0
-
-        except Exception:
-            return False
-
-    # -----------------------------
-    # Main indexing
+    # Indexing
     # -----------------------------
     def index(self):
 
         files = self.scanner.scan()
+        current_files = set(str(f) for f in files)
+
+        self.sync_deletions(current_files)
 
         print(f"\n📦 Found {len(files)} files\n")
+
+        sample_vector = self.embedder.embed("init")
+        self.qdrant.create_collection(len(sample_vector))
 
         for file in files:
 
             try:
-                print(f"\n📄 Processing file: {file}")
-
                 content = file.read_text(encoding="utf-8", errors="ignore")
                 file_hash = self.hash_file(content)
 
-                # -----------------------------
-                # Ensure collection exists FIRST
-                # -----------------------------
-                sample_vector = self.embedder.embed("init")
-                self.qdrant.create_collection(len(sample_vector))
-
-                # -----------------------------
-                # Skip logic
-                # -----------------------------
-                file_changed = self.state.has_changed(str(file), file_hash)
-                qdrant_exists = self.qdrant_file_exists(str(file))
-
-                if not file_changed and qdrant_exists:
-                    print(f"🟡 Skipping unchanged file: {file}")
+                # skip unchanged
+                if not self.state.has_changed(str(file), file_hash):
+                    print(f"🟡 Skipping unchanged: {file}")
                     continue
 
-                # -----------------------------
-                # Delete old data
-                # -----------------------------
-                print(f"🔴 Deleting old chunks for: {file}")
-
-                try:
-                    self.qdrant.client.delete(
-                        collection_name=self.qdrant.collection_name,
-                        points_selector=Filter(
-                            must=[
-                                FieldCondition(
-                                    key="file", match=MatchValue(value=str(file))
-                                )
-                            ]
-                        ),
-                    )
-                    print(f"🧹 Old chunks deleted for: {file}")
-
-                except Exception as e:
-                    print(f"⚠️ Delete warning: {e}")
-
-                # -----------------------------
-                # Chunking
-                # -----------------------------
-                chunks = self.chunker.chunk(content)
+                chunker = self.chunker_factory.get(file)
+                chunks = chunker.chunk(content, str(file))
 
                 if not chunks:
-                    print(f"⚠️ No chunks for: {file}")
                     continue
 
                 print(f"🧩 {file} → {len(chunks)} chunks")
 
-                # -----------------------------
-                # Embedding + storing
-                # -----------------------------
-                for chunk_index, chunk in enumerate(chunks):
+                for chunk in chunks:
 
-                    vector = self.embedder.embed(chunk)
+                    # LAYER 2: normalize
+                    chunk = self.normalizer.normalize(str(file), chunk)
 
-                    point_id = self.make_chunk_id(str(file), chunk_index, chunk)
+                    vector = self.embedder.embed(chunk.text)
 
-                    print(f"🟢 Chunk {chunk_index} → {point_id}")
+                    # SINGLE SOURCE OF TRUTH ID
+                    point_id = chunk.metadata.chunk_hash
 
                     self.qdrant.upsert(
                         vector=vector,
-                        payload={
-                            "text": chunk,
-                            "file": str(file),
-                            "chunk_index": chunk_index,
-                            "file_hash": file_hash,
-                        },
                         point_id=point_id,
+                        payload={
+                            "text": chunk.text,
+                            "file": str(file),
+                            "element_type": chunk.element_type,
+                            "start_line": chunk.start_line,
+                            "end_line": chunk.end_line,
+                            "metadata": asdict(chunk.metadata),
+                        },
                     )
 
-                    print(f"🔵 Stored chunk {chunk_index}")
-
-                # -----------------------------
-                # Save state
-                # -----------------------------
                 self.state.update_file(str(file), file_hash)
 
-                print(f"✅ Finished file: {file}")
+                print(f"✅ Finished: {file}")
 
             except Exception as e:
-                print(f"❌ Error processing {file}: {e}")
+                print(f"❌ Error: {file} → {e}")

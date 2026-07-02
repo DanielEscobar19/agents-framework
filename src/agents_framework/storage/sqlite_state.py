@@ -53,4 +53,34 @@ class SQLiteState:
     # -------------------------
     def has_changed(self, file_path: str, new_hash: str) -> bool:
         old_hash = self.get_hash(file_path)
-        return old_hash != new_hash
+        return old_hash is None or old_hash != new_hash
+
+    def get_all(self) -> list[dict]:
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT file_path, file_hash, last_indexed FROM file_state")
+        rows = cursor.fetchall()
+
+        return [
+            {
+                "file_path": r[0],
+                "file_hash": r[1],
+                "last_indexed": r[2],
+            }
+            for r in rows
+        ]
+
+    def delete_file(self, file_path: str):
+        cursor = self.conn.cursor()
+        cursor.execute("DELETE FROM file_state WHERE file_path = ?", (file_path,))
+        self.conn.commit()
+
+    def get_all_files(self) -> set[str]:
+        cursor = self.conn.cursor()
+
+        cursor.execute("""
+            SELECT file_path FROM file_state
+        """)
+
+        rows = cursor.fetchall()
+
+        return {row[0] for row in rows}
