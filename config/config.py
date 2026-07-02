@@ -22,10 +22,9 @@ class Config:
 
 
 def load_config() -> Config:
+    config_file = Path(__file__).with_name("appsettings.json")
 
-    config_file = Path(__file__).resolve().parents[2] / "config" / "appsettings.json"
-
-    with open(config_file, encoding="utf-8") as f:
+    with config_file.open(encoding="utf-8") as f:
         app = json.load(f)
 
     return Config(

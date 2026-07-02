@@ -1,6 +1,6 @@
-from src.agents_framework.indexing.indexer import Indexer
-from src.agents_framework.embeddings.ollama_embedder import OllamaEmbedder
-from src.agents_framework.storage.qdrant_service import QdrantService
+from agents_framework.indexing.indexer import Indexer
+from agents_framework.embeddings.ollama_embedder import OllamaEmbedder
+from agents_framework.storage.qdrant_service import QdrantService
 
 
 def main():
