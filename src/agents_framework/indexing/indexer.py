@@ -5,7 +5,7 @@ from agents_framework.indexing.scanner import FileScanner
 from agents_framework.embeddings.ollama_embedder import OllamaEmbedder
 from agents_framework.storage.qdrant_service import QdrantService
 from agents_framework.storage.sqlite_state import SQLiteState
-from qdrant_client.models import Filter, FieldCondition, MatchValue
+from qdrant_client.models import Filter, FieldCondition, MatchValue, PointIdsList
 from dataclasses import asdict
 
 
@@ -76,17 +76,50 @@ class Indexer:
                     continue
 
                 chunker = self.chunker_factory.get(file)
-                chunks = chunker.chunk(content, str(file))
+                raw_chunks = chunker.chunk(content, str(file))
+                old_hashes = self.state.get_chunk_hashes(str(file))
 
-                if not chunks:
+                if not raw_chunks:
+                    if old_hashes:
+                        self.qdrant.client.delete(
+                            collection_name=self.qdrant.collection_name,
+                            points_selector=PointIdsList(points=list(old_hashes)),
+                        )
+
+                    self.state.upsert_chunks(str(file), set())
+                    self.state.update_file(str(file), file_hash)
+
+                    print(
+                        f"✅ {file} → +0 embedded, -{len(old_hashes)} deleted, 0 unchanged"
+                    )
                     continue
 
+                # Normalize all chunks first so hash-based diffing can run per chunk.
+                chunks = [
+                    self.normalizer.normalize(str(file), chunk) for chunk in raw_chunks
+                ]
+
+                new_hashes = {chunk.metadata.chunk_hash for chunk in chunks}
+
+                to_add = new_hashes - old_hashes
+                to_delete = old_hashes - new_hashes
+
+                # log to check how many chunks were created
                 print(f"🧩 {file} → {len(chunks)} chunks")
+
+                if to_delete:
+                    self.qdrant.client.delete(
+                        collection_name=self.qdrant.collection_name,
+                        points_selector=PointIdsList(points=list(to_delete)),
+                    )
+                    print(f"  🗑️ Deleted {len(to_delete)} orphaned chunks")
+
+                added = 0
 
                 for chunk in chunks:
 
-                    # LAYER 2: normalize
-                    chunk = self.normalizer.normalize(str(file), chunk)
+                    if chunk.metadata.chunk_hash not in to_add:
+                        continue
 
                     vector = self.embedder.embed(chunk.text)
 
@@ -106,9 +139,16 @@ class Indexer:
                         },
                     )
 
+                    added += 1
+
+                self.state.upsert_chunks(str(file), new_hashes)
+
                 self.state.update_file(str(file), file_hash)
 
-                print(f"✅ Finished: {file}")
+                unchanged = len(new_hashes) - added
+                print(
+                    f"✅ {file} → +{added} embedded, -{len(to_delete)} deleted, {unchanged} unchanged"
+                )
 
             except Exception as e:
                 print(f"❌ Error: {file} → {e}")

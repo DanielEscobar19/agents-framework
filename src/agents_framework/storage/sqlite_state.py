@@ -17,6 +17,16 @@ class SQLiteState:
                 last_indexed INTEGER
             )
         """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS chunk_state (
+                chunk_hash TEXT PRIMARY KEY,
+                file_path TEXT NOT NULL,
+                last_indexed INTEGER
+            )
+        """)
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_chunk_state_file ON chunk_state(file_path)"
+        )
         self.conn.commit()
 
     # -------------------------
@@ -70,6 +80,7 @@ class SQLiteState:
         ]
 
     def delete_file(self, file_path: str):
+        self.delete_chunks_for_file(file_path)
         cursor = self.conn.cursor()
         cursor.execute("DELETE FROM file_state WHERE file_path = ?", (file_path,))
         self.conn.commit()
@@ -84,3 +95,30 @@ class SQLiteState:
         rows = cursor.fetchall()
 
         return {row[0] for row in rows}
+
+    def get_chunk_hashes(self, file_path: str) -> set[str]:
+        cursor = self.conn.cursor()
+        cursor.execute(
+            "SELECT chunk_hash FROM chunk_state WHERE file_path = ?", (file_path,)
+        )
+        return {row[0] for row in cursor.fetchall()}
+
+    def upsert_chunks(self, file_path: str, chunk_hashes: set[str]):
+        ts = int(time.time())
+        with self.conn:
+            self.conn.execute(
+                "DELETE FROM chunk_state WHERE file_path = ?", (file_path,)
+            )
+            if chunk_hashes:
+                self.conn.executemany(
+                    """
+                    INSERT INTO chunk_state (chunk_hash, file_path, last_indexed)
+                    VALUES (?, ?, ?)
+                    """,
+                    [(chunk_hash, file_path, ts) for chunk_hash in chunk_hashes],
+                )
+
+    def delete_chunks_for_file(self, file_path: str):
+        cursor = self.conn.cursor()
+        cursor.execute("DELETE FROM chunk_state WHERE file_path = ?", (file_path,))
+        self.conn.commit()

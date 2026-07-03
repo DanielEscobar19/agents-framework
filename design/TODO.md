@@ -1,13 +1,49 @@
-- check if this architecture is reusabel with cluad code or otehr ones (it is beacuse we are creating a mcp server)
+---
+title: Agents Framework TODO
+description: Prioritized engineering backlog aligned with current indexing and RAG roadmap
+author: BrandCheck Team
+ms.date: 2026-07-03
+ms.topic: how-to
+keywords:
+	- todo
+	- backlog
+	- rag
+	- indexing
+estimated_reading_time: 4
+---
 
-- No chunk-level diffing (full file re-embedding on change)
-  - check teh chunking policy to know which to use (now ses every 40 lines not ideal) in progress
-  - update only chunks isntead of the whole file next stpe
+## Purpose
 
-- add full rebuidl index option
+This file tracks actionable engineering tasks that are not yet complete.
 
-- add control loggin level with config object form teh appsettings
+## Priority 1: RAG Core Delivery
 
-- No async indexing pipeline
-- No embedding cache layer
-- No retrieval API yet
+- [ ] Implement retrieval API layer for user queries
+- [ ] Implement ranking and context assembly pipeline
+- [ ] Implement end-to-end RAG request flow (`question -> retrieve -> rank -> context -> answer`)
+- [ ] Expose indexing and retrieval operations through MCP tools
+
+## Priority 2: Indexing Performance and Reliability
+
+- [ ] Add embedding cache keyed by `chunk_hash`
+- [ ] Add full rebuild index option
+- [ ] Add configurable logging level from `appsettings`
+- [ ] Add automated regression tests for indexing transitions (changed, deleted, zero-chunk)
+
+## Priority 3: Chunker Quality Improvements
+
+- [ ] Improve C# chunker with parser-based extraction
+- [ ] Improve Python chunker metadata extraction
+- [ ] Improve Markdown chunker metadata extraction
+- [ ] Improve fallback line chunker metadata extraction
+
+## Priority 4: Optional Hardening
+
+- [ ] Evaluate migration path from MD5 to SHA-256 for chunk hashing
+- [ ] Evaluate async indexing pipeline
+
+## Notes
+
+- Completed chunk-level diffing is intentionally not listed here.
+- Roadmap: `design/roadmap.md`
+- Current RAG state: `design/rag-state-and-next-steps.md`

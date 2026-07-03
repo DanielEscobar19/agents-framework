@@ -124,11 +124,12 @@ Handles:
 
 ## 7. SQLiteState
 
-Stores file-level metadata:
+Stores file-level and chunk-level metadata:
 
 - file path
 - file hash
 - last indexed timestamp
+- chunk hash set per file (`chunk_state`)
 
 Used for incremental indexing and change detection.
 
@@ -145,13 +146,14 @@ Used for incremental indexing and change detection.
    └─ hash changed → reindex
 4.Sync deletions (remove missing files from Qdrant + SQLite)
 5.Ensure Qdrant collection exists
-6.Delete old vectors for changed files
-7.Select chunker via factory
-8.Chunk file into semantic units
-9.Normalize chunks (generate chunk_hash)
-10.Embed chunks
-11.Store in Qdrant with deterministic ID
-12.Update SQLite state
+6.Select chunker via factory
+7.Chunk file into semantic units
+8.Normalize chunks (generate chunk_hash)
+9.Load old chunk hashes from SQLite
+10.Compute diff (`to_add`, `to_delete`)
+11.Delete only orphaned chunk IDs from Qdrant (`to_delete`)
+12.Embed and upsert only changed/new chunks (`to_add`)
+13.Update SQLite file and chunk state
 ```
 
 ---
@@ -160,7 +162,12 @@ Used for incremental indexing and change detection.
 
 ```python
 if state.has_changed(file_path, file_hash):
-    reindex_file()
+    old_hashes = state.get_chunk_hashes(file_path)
+    new_hashes = {chunk.chunk_hash for chunk in normalized_chunks}
+    to_add = new_hashes - old_hashes
+    to_delete = old_hashes - new_hashes
+    delete_orphan_chunks(to_delete)
+    upsert_changed_chunks(to_add)
 else:
     skip_file()
 
@@ -254,43 +261,16 @@ Prevents duplicate embeddings and enables safe updates.
 
 # ⚠️ Current Limitations
 
-- No chunk-level diffing (full file re-embedding on change)
 - No async indexing pipeline
 - No embedding cache layer
 - No retrieval API yet
 
 ---
 
-# 🔮 Roadmap
+# 📌 Planning Documents
 
-## Phase 1 (DONE)
-
-- indexing pipeline
-- chunking system
-- embedding layer
-- Qdrant integration
-- SQLite state tracking
-- deletion sync
-
-## Phase 2 (NEXT)
-
-- chunk-level diff detection
-- smarter incremental updates (partial reindex)
-- embedding caching layer
-
-## Phase 3
-
-- retrieval API (RAG engine)
-- context builder
-
-## Phase 4
-
-- MCP server integration
-- agent tool exposure
-
-## Phase 5
-
-- VS Code Copilot-style integration
+- Roadmap has been moved to `design/roadmap.md`
+- Current RAG state and next steps are in `design/rag-state-and-next-steps.md`
 
 ---
 

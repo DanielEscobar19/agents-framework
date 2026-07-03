@@ -316,6 +316,26 @@ Benefits include:
 
 ---
 
+# Chunk Update Logic
+
+The indexer now works at chunk level for changed files.
+
+For each scanned file:
+
+1. Compute file hash and skip file if unchanged.
+2. If changed, chunk and normalize the file to compute deterministic `chunk_hash` per chunk.
+3. Read previous chunk hashes for the same file from SQLite `chunk_state`.
+4. Compute set diff:
+   - `to_add = new_hashes - old_hashes`
+   - `to_delete = old_hashes - new_hashes`
+5. Delete orphaned chunk IDs in Qdrant using `to_delete`.
+6. Embed and upsert only chunks in `to_add`.
+7. Persist new chunk hashes in `chunk_state` and refresh file hash in `file_state`.
+
+This gives incremental add, update, and delete behavior without re-embedding unchanged chunks.
+
+---
+
 # Roadmap
 
 - Chunk-level incremental indexing
