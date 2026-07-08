@@ -19,6 +19,7 @@ class Config:
 
     chunk_size: int
     chunk_overlap: int
+    logging_level: str
 
 
 def load_config() -> Config:
@@ -35,6 +36,7 @@ def load_config() -> Config:
         ignored_directories=app["scanner"]["ignored_directories"],
         chunk_size=app["chunking"]["chunk_size"],
         chunk_overlap=app["chunking"]["chunk_overlap"],
+        logging_level=app.get("logging", {}).get("level", "INFO"),
     )
 
 

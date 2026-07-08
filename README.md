@@ -150,8 +150,16 @@ You should see a running container named `qdrant`.
 From the project root:
 
 ```bash
-python main.py
+python main.py <root_path>
 ```
+
+Example:
+
+```bash
+python main.py .
+```
+
+`root_path` is required and points to the repository directory to index.
 
 ---
 
@@ -175,6 +183,12 @@ cd agents-framework
 docker start qdrant
 
 python main.py
+```
+
+If you want to index the current repository directory explicitly:
+
+```cmd
+python main.py .
 ```
 
 ---
@@ -256,10 +270,35 @@ Stores application configuration such as:
 - ignored directories
 - chunk size
 - chunk overlap
+- logging level
 - retrieval settings (future)
 - MCP settings (future)
 
 This file is version-controlled and shared across all environments.
+
+### Logging Level
+
+Logging is controlled by `logging.level` in `config/appsettings.json`.
+
+Supported values:
+
+- `INFO`
+- `WARNING`
+- `ERROR`
+
+Example:
+
+```json
+"logging": {
+   "level": "ERROR"
+}
+```
+
+Behavior:
+
+- `INFO`: shows info, warning, and error logs
+- `WARNING`: shows warning and error logs
+- `ERROR`: shows only error logs
 
 ---
 

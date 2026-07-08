@@ -1,14 +1,14 @@
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
-
-from config.config import config
+from typing import Any
 
 
 class QdrantService:
 
-    def __init__(self):
-        self.client = QdrantClient(url=config.qdrant_url)
-        self.collection_name = config.collection_name
+    def __init__(self, config: Any):
+        self.config = config
+        self.client = QdrantClient(url=self.config.qdrant_url)
+        self.collection_name = self.config.collection_name
 
     def create_collection(self, vector_size: int):
 

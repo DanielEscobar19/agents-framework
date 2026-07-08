@@ -1,4 +1,5 @@
 from agents_framework.common.hash_utils import HashUtils
+from agents_framework.enums.log_level import LogLevel
 from agents_framework.indexing.chunkers.factory import ChunkerFactory
 from agents_framework.indexing.normalizer.chunk_normalizer import ChunkNormalizer
 from agents_framework.indexing.scanner import FileScanner
@@ -7,11 +8,13 @@ from agents_framework.storage.qdrant_service import QdrantService
 from agents_framework.storage.sqlite_state import SQLiteState
 from qdrant_client.models import Filter, FieldCondition, MatchValue, PointIdsList
 from dataclasses import asdict
+from agents_framework.util.logger import Logger
+from typing import Any
 
 
 class Indexer:
 
-    def __init__(self, root_path: str):
+    def __init__(self, root_path: str, logger: Logger, config: Any):
 
         self.state = SQLiteState()
 
@@ -19,8 +22,9 @@ class Indexer:
         self.chunker_factory = ChunkerFactory()
         self.normalizer = ChunkNormalizer()
 
-        self.embedder = OllamaEmbedder()
-        self.qdrant = QdrantService()
+        self.embedder = OllamaEmbedder(config)
+        self.qdrant = QdrantService(config)
+        self.logger = logger
 
     # -----------------------------
     # Sync deletions
@@ -31,8 +35,7 @@ class Indexer:
         deleted_files = tracked_files - current_files
 
         for file in deleted_files:
-
-            print(f"🗑️ Deleting removed file: {file}")
+            self.logger.log(f"🗑️ Deleting removed file: {file}")
 
             self.qdrant.client.delete(
                 collection_name=self.qdrant.collection_name,
@@ -59,7 +62,7 @@ class Indexer:
 
         self.sync_deletions(current_files)
 
-        print(f"\n📦 Found {len(files)} files\n")
+        self.logger.log(f"\n📦 Found {len(files)} files\n")
 
         sample_vector = self.embedder.embed("init")
         self.qdrant.create_collection(len(sample_vector))
@@ -72,7 +75,8 @@ class Indexer:
 
                 # skip unchanged
                 if not self.state.has_changed(str(file), file_hash):
-                    print(f"🟡 Skipping unchanged: {file}")
+                    self.logger.log(f"🟡 Skipping unchanged: {file}", LogLevel.WARNING)
+
                     continue
 
                 chunker = self.chunker_factory.get(file)
@@ -89,7 +93,7 @@ class Indexer:
                     self.state.upsert_chunks(str(file), set())
                     self.state.update_file(str(file), file_hash)
 
-                    print(
+                    self.logger.log(
                         f"✅ {file} → +0 embedded, -{len(old_hashes)} deleted, 0 unchanged"
                     )
                     continue
@@ -105,14 +109,14 @@ class Indexer:
                 to_delete = old_hashes - new_hashes
 
                 # log to check how many chunks were created
-                print(f"🧩 {file} → {len(chunks)} chunks")
+                self.logger.log(f"🧩 {file} → {len(chunks)} chunks")
 
                 if to_delete:
                     self.qdrant.client.delete(
                         collection_name=self.qdrant.collection_name,
                         points_selector=PointIdsList(points=list(to_delete)),
                     )
-                    print(f"  🗑️ Deleted {len(to_delete)} orphaned chunks")
+                    self.logger.log(f"🗑️ Deleted {len(to_delete)} orphaned chunks")
 
                 added = 0
 
@@ -146,9 +150,10 @@ class Indexer:
                 self.state.update_file(str(file), file_hash)
 
                 unchanged = len(new_hashes) - added
-                print(
+
+                self.logger.log(
                     f"✅ {file} → +{added} embedded, -{len(to_delete)} deleted, {unchanged} unchanged"
                 )
 
             except Exception as e:
-                print(f"❌ Error: {file} → {e}")
+                self.logger.log(f"❌ Error: {file} → {e}", LogLevel.ERROR)

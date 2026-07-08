@@ -1,15 +1,17 @@
 from ollama import Client
-
-from config.config import config
+from typing import Any
 
 
 class OllamaEmbedder:
 
-    def __init__(self):
+    def __init__(self, config: Any):
         self.client = Client()
+        self.config = config
 
     def embed(self, text: str):
 
-        response = self.client.embeddings(model=config.embedding_model, prompt=text)
+        response = self.client.embeddings(
+            model=self.config.embedding_model, prompt=text
+        )
 
         return response["embedding"]
