@@ -17,6 +17,11 @@ def main():
     retrieve_parser.add_argument("--query", required=True, help="Search query")
     retrieve_parser.add_argument("--top-k", type=int, help="Override result limit")
     retrieve_parser.add_argument(
+        "--min-score",
+        type=float,
+        help="Override score threshold (e.g. 0.3 to broaden results)",
+    )
+    retrieve_parser.add_argument(
         "--context",
         action="store_true",
         help="Return assembled context string instead of JSON results",
@@ -35,7 +40,9 @@ def main():
         if args.context:
             print(service.build_context(args.query))
         else:
-            ctx = service.retrieve(args.query, limit=args.top_k)
+            ctx = service.retrieve(
+                args.query, limit=args.top_k, min_score=args.min_score
+            )
             for r in ctx.results:
                 print(
                     json.dumps(

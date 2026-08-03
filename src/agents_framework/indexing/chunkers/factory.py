@@ -2,6 +2,7 @@ from pathlib import Path
 
 from .csharp_chunker import CSharpChunker
 from .python_chunker import PythonChunker
+from .typescript_chunker import TypeScriptChunker
 
 from .line_chunker import LineChunker
 from .markdown_chunker import MarkdownChunker
@@ -22,6 +23,9 @@ class ChunkerFactory:
 
         if ext == ".cs":
             return CSharpChunker()
+
+        if ext in (".ts", ".js"):
+            return TypeScriptChunker()
 
         if ext == ".md":
             return MarkdownChunker()

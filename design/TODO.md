@@ -28,13 +28,15 @@ This file tracks actionable engineering tasks that are not yet complete.
 - [ ] Add embedding cache keyed by `chunk_hash`
 - [ ] Add full rebuild index option
 - [ ] Add configurable logging level from `appsettings`
-- [ ] Add automated regression tests for indexing transitions (changed, deleted, zero-chunk)
+- [x] Add automated regression tests for indexing and retrieval transitions
+- [ ] Add indexing-specific transition tests (changed, deleted, zero-chunk)
 
 ## Priority 3: Chunker Quality Improvements
 
-- [ ] Improve C# chunker with parser-based extraction
-- [ ] Improve Python chunker metadata extraction
-- [ ] Improve Markdown chunker metadata extraction
+- [x] Improve C# chunker — full method body extraction via brace-depth scanning
+- [x] Improve Python chunker — class context (`class_name`) now set on method chunks
+- [x] Improve Markdown chunker — `heading`, `heading_level`, and `section_path` now populated
+- [x] Add TypeScript/JavaScript chunker — regex-based function, arrow function, class, and method extraction
 - [ ] Improve fallback line chunker metadata extraction
 
 ## Priority 4: Optional Hardening

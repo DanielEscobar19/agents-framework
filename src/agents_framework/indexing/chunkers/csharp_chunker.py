@@ -31,11 +31,32 @@ class CSharpChunker(IChunker):
 
                 method_name = method_match.group(2)
 
+                # scan forward to find the opening brace (within 5 lines)
+                body_start = None
+                for j in range(i, min(i + 6, len(lines))):
+                    if "{" in lines[j]:
+                        body_start = j
+                        break
+
+                if body_start is not None:
+                    depth = 0
+                    body_end = body_start
+                    for j in range(body_start, len(lines)):
+                        depth += lines[j].count("{") - lines[j].count("}")
+                        if depth <= 0:
+                            body_end = j
+                            break
+                    chunk_text = "\n".join(lines[i : body_end + 1])
+                    end_line = body_end + 1
+                else:
+                    chunk_text = line
+                    end_line = i + 1
+
                 chunks.append(
                     Chunk(
-                        text=line,
+                        text=chunk_text,
                         start_line=i + 1,
-                        end_line=i + 1,
+                        end_line=end_line,
                         element_type="method",
                         metadata=CSharpChunkMetadata(
                             file_path=file_path,

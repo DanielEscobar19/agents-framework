@@ -19,7 +19,10 @@ class Retriever:
         query: str,
         limit: int = 10,
         query_filter: Filter | None = None,
+        min_score: float | None = None,
     ) -> list[SearchResult]:
+
+        threshold = min_score if min_score is not None else self.score_threshold
 
         vector = self.embedder.embed(query)
 
@@ -34,7 +37,7 @@ class Retriever:
 
         for point in response.points:
 
-            if point.score < self.score_threshold:
+            if point.score < threshold:
                 continue
 
             payload = point.payload

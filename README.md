@@ -424,9 +424,14 @@ Benefits include:
 - Automatic reindexing of modified files
 - Config-driven architecture
 - Score-threshold and top-k filtering in retrieval
+- Soft fallback retrieval when threshold filters all results
 - Token-bounded context assembly
 - FastAPI REST API for retrieval and indexing
 - MCP server (stdio) for Copilot and Claude Desktop integration
+- TypeScript/JavaScript chunker (function, arrow function, class, method)
+- C# chunker extracts full method bodies
+- Markdown chunker with heading and section-path metadata
+- Python chunker tracks class context for methods
 
 ---
 
@@ -447,6 +452,49 @@ For each scanned file:
 7. Persist new chunk hashes in `chunk_state` and refresh file hash in `file_state`.
 
 This gives incremental add, update, and delete behavior without re-embedding unchanged chunks.
+
+---
+
+# Testing
+
+## Unit tests
+
+Run the full unit suite without any external services:
+
+```bash
+pytest tests/unit/ -v
+```
+
+Unit tests cover:
+
+- `ContextBuilder` — empty input, header format, dedup by `chunk_hash`, `None` hash behavior, token budget truncation
+- `RetrievalService` — `top_k` usage, limit override, `min_score` passthrough, empty text filter, soft fallback trigger
+- `Config` loading — field types, `appsettings.json` values, environment variable overrides and defaults
+
+All unit tests mock Qdrant and Ollama. No running containers required.
+
+## Integration tests
+
+Require live Qdrant and Ollama with an indexed repository.
+
+```bash
+pytest -m integration -v
+```
+
+Integration tests run parametrized (query, expected_file) pairs and verify that real retrieval returns relevant chunks. They are excluded from the default test run.
+
+## Test structure
+
+```text
+tests/
+├── conftest.py           — shared SearchResult factory
+├── unit/
+│   ├── test_config.py
+│   ├── test_context_builder.py
+│   └── test_retrieval_service.py
+└── integration/
+    └── test_retrieval_integration.py
+```
 
 ---
 

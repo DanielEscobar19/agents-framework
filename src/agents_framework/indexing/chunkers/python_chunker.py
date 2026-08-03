@@ -16,10 +16,10 @@ class PythonChunker(IChunker):
         lines = text.splitlines()
         chunks = []
 
-        for node in ast.walk(tree):
+        for node in tree.body:
 
             # -------------------------
-            # Functions
+            # Top-level functions
             # -------------------------
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
 
@@ -44,7 +44,7 @@ class PythonChunker(IChunker):
                 )
 
             # -------------------------
-            # Classes
+            # Classes + methods
             # -------------------------
             elif isinstance(node, ast.ClassDef):
 
@@ -67,6 +67,30 @@ class PythonChunker(IChunker):
                         ),
                     )
                 )
+
+                for method_node in node.body:
+                    if isinstance(method_node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                        method_text = self._get_source(lines, method_node)
+                        chunks.append(
+                            Chunk(
+                                text=method_text,
+                                start_line=method_node.lineno,
+                                end_line=getattr(
+                                    method_node, "end_lineno", method_node.lineno
+                                ),
+                                element_type="function",
+                                metadata=PythonChunkMetadata(
+                                    file_path=file_path,
+                                    file_extension=".py",
+                                    relative_path=file_path,
+                                    language="python",
+                                    class_name=node.name,
+                                    function_name=method_node.name,
+                                    symbol_name=method_node.name,
+                                    symbol_type="function",
+                                ),
+                            )
+                        )
 
         return chunks
 

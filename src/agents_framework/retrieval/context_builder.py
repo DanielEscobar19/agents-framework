@@ -18,9 +18,10 @@ class ContextBuilder:
         for result in results:
 
             chunk_id = result.metadata.chunk_hash
-            if chunk_id in seen:
-                continue
-            seen.add(chunk_id)
+            if chunk_id is not None:
+                if chunk_id in seen:
+                    continue
+                seen.add(chunk_id)
 
             header = f"# {result.file}:{result.start_line}-{result.end_line} [{result.element_type}]\n"
             block = header + result.text.strip() + "\n"
