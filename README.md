@@ -147,19 +147,86 @@ You should see a running container named `qdrant`.
 
 # Running the Project
 
+## Indexing
+
 From the project root:
 
 ```bash
-python main.py <root_path>
+python main.py index <root_path>
 ```
 
 Example:
 
 ```bash
-python main.py .
+python main.py index .
 ```
 
-`root_path` is required and points to the repository directory to index.
+## Retrieval (CLI)
+
+```bash
+python main.py retrieve --query "what does the indexer do?"
+```
+
+With top-k override:
+
+```bash
+python main.py retrieve --query "chunking strategy" --top-k 5
+```
+
+Return assembled context string:
+
+```bash
+python main.py retrieve --query "chunking strategy" --context
+```
+
+## REST API
+
+Start the FastAPI server:
+
+```bash
+python serve.py
+```
+
+Endpoints:
+
+- `POST http://localhost:8000/retrieval/retrieve` — returns ranked results
+- `POST http://localhost:8000/retrieval/context` — returns assembled context string
+- `POST http://localhost:8000/indexing/index` — triggers incremental indexer
+
+Example request body for `/retrieve`:
+
+```json
+{ "query": "how does incremental indexing work?", "top_k": 5 }
+```
+
+## MCP Server
+
+Start the MCP server (stdio transport):
+
+```bash
+python mcp_server.py
+```
+
+To wire into VS Code Copilot, add to `.vscode/mcp.json`:
+
+```json
+{
+  "servers": {
+    "agents-framework": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["mcp_server.py"],
+      "cwd": "<absolute-path-to-agents-framework>"
+    }
+  }
+}
+```
+
+Available MCP tools:
+
+- `search_code(query, top_k?)` — semantic chunk search
+- `get_context(query)` — token-bounded context string
+- `index_codebase(root_path)` — incremental indexer trigger
 
 ---
 
@@ -182,13 +249,7 @@ cd agents-framework
 
 docker start qdrant
 
-python main.py
-```
-
-If you want to index the current repository directory explicitly:
-
-```cmd
-python main.py .
+python main.py index .
 ```
 
 ---
@@ -230,19 +291,29 @@ agents-framework/
 │
 ├── src/
 │   └── agents_framework/
+│       ├── api/
+│       │   ├── endpoints/
+│       │   ├── schemas.py
+│       │   └── server.py
 │       ├── embeddings/
 │       ├── indexing/
-│       ├── retrieval/
-│       ├── storage/
-│       ├── models/
 │       ├── mcp/
+│       │   └── tools/
+│       ├── models/
+│       ├── retrieval/
+│       │   ├── context_builder.py
+│       │   ├── retrieval_service.py
+│       │   └── retriever.py
+│       ├── storage/
 │       └── __init__.py
 │
 ├── .env
 ├── .gitignore
+├── main.py
+├── mcp_server.py
 ├── pyproject.toml
 ├── requirements.txt
-├── main.py
+├── serve.py
 └── README.md
 ```
 
@@ -271,8 +342,8 @@ Stores application configuration such as:
 - chunk size
 - chunk overlap
 - logging level
-- retrieval settings (future)
-- MCP settings (future)
+- retrieval settings
+- MCP settings
 
 This file is version-controlled and shared across all environments.
 
@@ -352,6 +423,10 @@ Benefits include:
 - Deterministic chunk IDs
 - Automatic reindexing of modified files
 - Config-driven architecture
+- Score-threshold and top-k filtering in retrieval
+- Token-bounded context assembly
+- FastAPI REST API for retrieval and indexing
+- MCP server (stdio) for Copilot and Claude Desktop integration
 
 ---
 
@@ -377,14 +452,14 @@ This gives incremental add, update, and delete behavior without re-embedding unc
 
 # Roadmap
 
-- Chunk-level incremental indexing
-- Smarter chunking strategy
-- Metadata extraction (classes, methods, imports)
-- Retrieval service (RAG)
-- Context builder
-- MCP server
-- GitHub Copilot integration
-- Claude Code integration
-- Multi-repository support
-- Agent memory
-- Performance optimizations
+- [x] Chunk-level incremental indexing
+- [x] Smarter chunking strategy
+- [x] Metadata extraction (classes, methods, imports)
+- [x] Retrieval service (RAG)
+- [x] Context builder
+- [x] MCP server
+- [x] GitHub Copilot integration
+- [x] Claude Code integration
+- [ ] Multi-repository support
+- [ ] Agent memory
+- [ ] Performance optimizations (embedding cache, async pipeline)

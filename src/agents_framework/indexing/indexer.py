@@ -18,8 +18,8 @@ class Indexer:
 
         self.state = SQLiteState()
 
-        self.scanner = FileScanner(root_path)
-        self.chunker_factory = ChunkerFactory()
+        self.scanner = FileScanner(root_path, config)
+        self.chunker_factory = ChunkerFactory(config)
         self.normalizer = ChunkNormalizer()
 
         self.embedder = OllamaEmbedder(config)
@@ -134,12 +134,16 @@ class Indexer:
                         vector=vector,
                         point_id=point_id,
                         payload={
+                            "chunk_hash": point_id,
                             "text": chunk.text,
-                            "file": str(file),
+                            "file": chunk.metadata.relative_path,
                             "element_type": chunk.element_type,
                             "start_line": chunk.start_line,
                             "end_line": chunk.end_line,
-                            "metadata": asdict(chunk.metadata),
+                            "metadata": {
+                                "type": type(chunk.metadata).__name__,
+                                **asdict(chunk.metadata),
+                            },
                         },
                     )
 

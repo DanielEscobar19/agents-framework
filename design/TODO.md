@@ -2,7 +2,7 @@
 title: Agents Framework TODO
 description: Prioritized engineering backlog aligned with current indexing and RAG roadmap
 author: BrandCheck Team
-ms.date: 2026-07-03
+ms.date: 2026-08-03
 ms.topic: how-to
 keywords:
 	- todo
@@ -18,10 +18,10 @@ This file tracks actionable engineering tasks that are not yet complete.
 
 ## Priority 1: RAG Core Delivery
 
-- [ ] Implement retrieval API layer for user queries
-- [ ] Implement ranking and context assembly pipeline
-- [ ] Implement end-to-end RAG request flow (`question -> retrieve -> rank -> context -> answer`)
-- [ ] Expose indexing and retrieval operations through MCP tools
+- [x] Implement retrieval API layer for user queries
+- [x] Implement ranking and context assembly pipeline
+- [x] Implement end-to-end RAG request flow (`question -> retrieve -> rank -> context -> answer`)
+- [x] Expose indexing and retrieval operations through MCP tools
 
 ## Priority 2: Indexing Performance and Reliability
 

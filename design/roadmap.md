@@ -2,7 +2,7 @@
 title: Agents Framework Roadmap
 description: Implementation roadmap aligned with the current indexing system and planned RAG evolution
 author: BrandCheck Team
-ms.date: 2026-07-03
+ms.date: 2026-08-03
 ms.topic: overview
 keywords:
   - roadmap
@@ -49,20 +49,24 @@ Remaining:
 
 ## Planned Next Phases
 
-### Phase 3: Retrieval Engine (RAG Core)
+### Phase 3: Retrieval Engine (RAG Core) — Complete
 
-Goals:
+Implemented:
 
-- Implement retrieval service for semantic code lookup
-- Add ranking pipeline for better relevance
-- Add context builder for LLM-ready prompt context
+- Config-driven `score_threshold` and `top_k` in retrieval
+- `ContextBuilder` for token-bounded, deduped LLM context assembly
+- `RetrievalService.build_context()` end-to-end retrieval-to-context method
+- CLI retrieve command
 
-### Phase 4: MCP Server Tools
+### Phase 4: MCP Server Tools — Complete
 
-Goals:
+Implemented:
 
-- Expose indexing and retrieval capabilities as MCP tools
-- Support operations such as indexing, semantic search, and context retrieval
+- `search_code` MCP tool — semantic chunk search
+- `get_context` MCP tool — token-bounded context string
+- `index_codebase` MCP tool — incremental indexer trigger
+- stdio transport for VS Code Copilot and Claude Desktop integration
+- FastAPI REST API for HTTP-based retrieval and indexing access
 
 ### Phase 5: Agent Orchestration
 

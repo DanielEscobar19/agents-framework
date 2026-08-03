@@ -21,6 +21,10 @@ class Config:
     chunk_overlap: int
     logging_level: str
 
+    top_k: int
+    score_threshold: float
+    max_context_tokens: int
+
 
 def load_config() -> Config:
     config_file = Path(__file__).with_name("appsettings.json")
@@ -37,6 +41,9 @@ def load_config() -> Config:
         chunk_size=app["chunking"]["chunk_size"],
         chunk_overlap=app["chunking"]["chunk_overlap"],
         logging_level=app.get("logging", {}).get("level", "INFO"),
+        top_k=app["retrieval"]["top_k"],
+        score_threshold=app["retrieval"]["score_threshold"],
+        max_context_tokens=app["mcp"]["max_context_tokens"],
     )
 
 

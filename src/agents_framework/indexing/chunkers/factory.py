@@ -9,9 +9,9 @@ from .markdown_chunker import MarkdownChunker
 
 class ChunkerFactory:
 
-    def __init__(self):
-        self.line_chunker = LineChunker()
-        self.markdown_chunker = MarkdownChunker()
+    def __init__(self, config):
+        self.chunk_size = config.chunk_size
+        self.chunk_overlap = config.chunk_overlap
 
     def get(self, file_path: str):
 
@@ -26,4 +26,4 @@ class ChunkerFactory:
         if ext == ".md":
             return MarkdownChunker()
 
-        return LineChunker()
+        return LineChunker(chunk_size=self.chunk_size, overlap=self.chunk_overlap)

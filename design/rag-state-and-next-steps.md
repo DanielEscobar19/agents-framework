@@ -2,7 +2,7 @@
 title: RAG System State and Next Steps
 description: Current implementation status and immediate next actions for the BrandCheck agents-framework RAG system
 author: BrandCheck Team
-ms.date: 2026-07-03
+ms.date: 2026-08-03
 ms.topic: how-to
 keywords:
   - rag
@@ -14,11 +14,11 @@ estimated_reading_time: 6
 
 ## Current State
 
-The system currently behaves as an indexing and semantic storage foundation for RAG, not a complete RAG runtime yet.
+The system is now a functioning RAG runtime with an HTTP API and an MCP server.
 
 ### What is implemented
 
-- File scanning and extension-aware filtering
+- File scanning with config-driven extension and directory filtering
 - Language-specific chunk generation
 - Deterministic chunk identity (`chunk_hash`)
 - Local embedding generation with Ollama
@@ -26,8 +26,19 @@ The system currently behaves as an indexing and semantic storage foundation for 
 - SQLite state management for file and chunk tracking
 - Incremental indexing with chunk-level add/update/delete behavior
 - Deleted file synchronization across SQLite and Qdrant
+- Config-driven `score_threshold` filtering in retrieval
+- Config-driven `top_k` result limiting
+- `ContextBuilder` for token-bounded, deduped LLM prompt assembly
+- FastAPI REST API: `POST /retrieval/retrieve`, `POST /retrieval/context`, `POST /indexing/index`
+- MCP server with `search_code`, `get_context`, and `index_codebase` tools (stdio transport)
+- CLI retrieve command: `python main.py retrieve --query "..."`
 
 ### What is not implemented yet
+
+- Embedding cache keyed by `chunk_hash`
+- Ranking pipeline (reranking beyond vector score)
+- Automated regression tests for indexing and retrieval transitions
+- Async indexing pipeline
 
 - Retrieval API layer for user queries
 - Ranking and context assembly pipeline
@@ -47,31 +58,16 @@ This keeps vector memory consistent and efficient, which is a prerequisite for g
 
 ## Immediate Next Steps
 
-1. Implement retrieval service
-
-- Add a retrieval module that accepts a query, generates query embeddings, and fetches top-k chunks from Qdrant
-
-2. Implement context builder
-
-- Assemble retrieved chunks into LLM-ready context with de-duplication and token-aware truncation
-
-3. Add retrieval validation
-
-- Add evaluation checks for retrieval precision and relevance over representative repository queries
-
-4. Add embedding cache
-
-- Cache vectors by `chunk_hash` to avoid duplicate embedding calls across rebuilds and repeated indexing operations
-
-5. Expose MCP interface
-
-- Add MCP tools for indexing and retrieval operations to integrate with Copilot and other agent runtimes
+1. Add embedding cache keyed by `chunk_hash`
+2. Add regression tests for indexing and retrieval edge cases
+3. Explore reranking strategies to improve result relevance
+4. Add async indexing pipeline for large repositories
 
 ## Suggested Build Order
 
-- Milestone A: Retrieval and context builder
-- Milestone B: MCP tool surface
-- Milestone C: Evaluation harness and optimization (cache, ranking improvements)
+- Milestone A: Embedding cache and regression tests
+- Milestone B: Reranking and relevance improvements
+- Milestone C: Async indexing pipeline
 
 ## Acceptance Criteria for RAG Readiness
 

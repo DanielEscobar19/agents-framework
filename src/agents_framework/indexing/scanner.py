@@ -3,35 +3,10 @@ from pathlib import Path
 
 class FileScanner:
 
-    def __init__(self, root_path: str):
+    def __init__(self, root_path: str, config):
         self.root_path = Path(root_path)
-        # this is a tets
-
-        self.allowed_extensions = {
-            ".cs",
-            ".ts",
-            ".js",
-            ".py",
-            ".java",
-            ".md",
-            ".json",
-            ".html",
-            ".css",
-        }
-
-        self.ignore_dirs = {
-            ".venv",
-            "venv",
-            "env",
-            ".env",
-            "node_modules",
-            "bin",
-            "obj",
-            ".git",
-            "dist",
-            "build",
-            "__pycache__",
-        }
+        self.allowed_extensions = set(config.allowed_extensions)
+        self.ignore_dirs = set(config.ignored_directories)
 
     def scan(self):
 

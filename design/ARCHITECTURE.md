@@ -53,7 +53,7 @@ This project implements a local AI-powered code understanding system inspired by
 
 # 🏗️ Architecture
 
-The system is composed of 3 main layers:
+The system is composed of 5 main layers:
 
 ```
 Codebase
@@ -70,7 +70,17 @@ Indexing Pipeline
              ↓
 ┌────────────────────────────┐
 │ Qdrant Vector DB           │ ← semantic storage
-└────────────────────────────┘
+└────────────┬───────────────┘
+             ↓
+┌────────────────────────────┐
+│ Retrieval Engine           │ ← score-filtered top-k search
+│ ContextBuilder             │ ← token-bounded prompt assembly
+└────────────┬───────────────┘
+             ↓
+┌──────────────────────────────────────┐
+│ Delivery Layer                       │
+│  FastAPI REST  │  MCP Server (stdio) │
+└──────────────────────────────────────┘
 ```
 
 ---
@@ -122,16 +132,50 @@ Handles:
 - deletion by file
 - semantic search
 
-## 7. SQLiteState
+## 7. RetrievalService
 
-Stores file-level and chunk-level metadata:
+Facade over the Retriever that applies `top_k` from config and filters empty results.
 
-- file path
-- file hash
-- last indexed timestamp
-- chunk hash set per file (`chunk_state`)
+Exposes:
 
-Used for incremental indexing and change detection.
+- `retrieve(query)` → ranked `RetrievalContext`
+- `build_context(query)` → token-bounded context string via `ContextBuilder`
+
+## 8. ContextBuilder
+
+Assembles retrieved chunks into an LLM-ready context string.
+
+Behavior:
+
+- Deduplicates chunks by `chunk_hash`
+- Applies `max_context_tokens` character budget from config
+- Formats each chunk with a `# file:start-end [type]` header
+
+## 9. FastAPI REST API
+
+HTTP interface for retrieval and indexing.
+
+Endpoints:
+
+- `POST /retrieval/retrieve` — returns ranked results as JSON
+- `POST /retrieval/context` — returns assembled context string
+- `POST /indexing/index` — triggers incremental indexer for a given `root_path`
+
+Entrypoint: `python serve.py`
+
+## 10. MCP Server
+
+Exposes retrieval and indexing as MCP tools via stdio transport.
+
+Tools:
+
+- `search_code(query, top_k?)` — semantic chunk search
+- `get_context(query)` — token-bounded context string
+- `index_codebase(root_path)` — incremental indexer trigger
+
+Compatible with VS Code Copilot and Claude Desktop via stdio MCP configuration.
+
+Entrypoint: `python mcp_server.py`
 
 ---
 
