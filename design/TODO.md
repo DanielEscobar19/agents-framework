@@ -27,9 +27,9 @@ This file tracks actionable engineering tasks that are not yet complete.
 
 - [ ] Add embedding cache keyed by `chunk_hash`
 - [ ] Add full rebuild index option
-- [ ] Add configurable logging level from `appsettings`
+- [x] Add configurable logging level from `appsettings`
 - [x] Add automated regression tests for indexing and retrieval transitions
-- [ ] Add indexing-specific transition tests (changed, deleted, zero-chunk)
+- [x] Add indexing-specific transition tests (changed, deleted, zero-chunk)
 
 ## Priority 3: Chunker Quality Improvements
 
@@ -43,6 +43,15 @@ This file tracks actionable engineering tasks that are not yet complete.
 
 - [ ] Evaluate migration path from MD5 to SHA-256 for chunk hashing
 - [ ] Evaluate async indexing pipeline
+
+## Priority 5: MCP Distribution and Packaging
+
+- [ ] Add `[project.dependencies]` to `pyproject.toml`
+- [ ] Add `agents-framework-mcp` console script entry point to `pyproject.toml`
+- [ ] Create `src/agents_framework/setup/bootstrap.py` — installs Qdrant container and Ollama model automatically
+- [ ] Add `agents-framework-setup` console script entry point
+- [ ] Update `README.md` with one-command install instructions for each platform
+- [ ] Evaluate `uvx` / PyPI publishing path
 
 ## Notes
 

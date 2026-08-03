@@ -82,6 +82,16 @@ Goals:
 - Provide repository-aware coding workflows through MCP-compatible clients
 - Improve developer interaction loops for assisted coding
 
+### Phase 7: MCP Distribution and Packaging
+
+Goals:
+
+- Add `[project.dependencies]` to `pyproject.toml` so `pip install .` handles all runtime deps
+- Add `agents-framework-mcp` console script entry point via `[project.scripts]`
+- Create a bootstrap setup script (`agents-framework-setup`) that installs Qdrant (Docker) and Ollama automatically
+- Support one-command MCP config for VS Code Copilot, Claude Desktop, and Claude Code
+- Evaluate publishing to PyPI for `uvx` zero-install usage
+
 ## Priority Backlog
 
 1. Build retrieval service and context builder
@@ -89,6 +99,8 @@ Goals:
 3. Add regression tests for chunk transition edge cases
 4. Expose retrieval/indexing surface through MCP
 5. Add dependency-aware context expansion
+6. Package and distribute as installable MCP skill (console entry point, setup script)
+7. Evaluate PyPI publishing for `uvx` zero-install support
 
 ## Related Documents
 

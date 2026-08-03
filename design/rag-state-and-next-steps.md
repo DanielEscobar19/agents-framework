@@ -45,11 +45,6 @@ The system is now a functioning RAG runtime with an HTTP API and an MCP server.
 - Automated regression tests for indexing and retrieval transitions
 - Async indexing pipeline
 
-- Retrieval API layer for user queries
-- Ranking and context assembly pipeline
-- MCP server tools for retrieval/indexing operations
-- End-to-end RAG request flow (`question -> retrieve -> rank -> context -> answer`)
-
 ## How the current indexing helps RAG
 
 The current pipeline already provides the core memory substrate required by RAG:

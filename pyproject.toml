@@ -11,6 +11,18 @@ requires-python = ">=3.12"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[project.dependencies]
+fastapi = ">=0.115.0"
+mcp = ">=1.0.0"
+uvicorn = ">=0.32.0"
+ollama = ">=0.6.0"
+qdrant-client = ">=1.18.0"
+pydantic = ">=2.0.0"
+python-dotenv = ">=1.0.0"
+
+[project.scripts]
+agents-framework-mcp = "agents_framework.mcp.server:run"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = [

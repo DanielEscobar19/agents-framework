@@ -41,12 +41,6 @@
 
 ## Overview
 
-This project implements a local AI-powered code understanding system inspired by Copilot-style indexing. It converts a codebase into a searchable semantic memory using embeddings + vector search + persistent state tracking.
-
-# 🧠 Agents Framework — Local Code Intelligence System
-
-## Overview
-
 This project implements a local AI-powered code understanding system inspired by Copilot-style indexing. It converts a codebase into a searchable semantic memory using embeddings, vector search, and persistent state tracking.
 
 ---
@@ -97,10 +91,11 @@ Scans repository and returns files to index.
 
 Selects the correct chunker based on file type:
 
-- PythonChunker (AST-based)
-- CSharpChunker (regex + structure heuristics)
-- MarkdownChunker (heading-based segmentation)
-- LineChunker (fallback strategy)
+- PythonChunker (AST-based, with class context on methods)
+- CSharpChunker (regex + brace-depth method body extraction)
+- MarkdownChunker (heading segmentation with section-path breadcrumb)
+- TypeScriptChunker (regex — functions, arrow functions, classes, methods)
+- LineChunker (fallback for all other extensions)
 
 ## 3. Chunkers
 
@@ -288,10 +283,11 @@ Used as:
 
 Each file type has a specialized strategy:
 
-- AST parsing (Python)
-- Regex structure detection (C#)
-- heading segmentation (Markdown)
-- fallback line chunking
+- AST parsing (Python, with parent class tracking)
+- Regex + brace-depth body extraction (C#)
+- Regex-based function/class/method extraction (TypeScript, JavaScript)
+- Heading segmentation with breadcrumb path (Markdown)
+- Fallback line chunking (all other types)
 
 ### 3. Incremental indexing
 
@@ -306,8 +302,7 @@ Prevents duplicate embeddings and enables safe updates.
 # ⚠️ Current Limitations
 
 - No async indexing pipeline
-- No embedding cache layer
-- No retrieval API yet
+- No embedding cache layer (vectors are re-computed on full rebuild)
 
 ---
 
@@ -331,9 +326,10 @@ Build a local AI system that can:
 
 # 🧪 Tech Stack
 
-- Python
+- Python 3.12+
 - Qdrant (vector DB)
 - SQLite (state tracking)
 - Ollama (local embeddings)
+- FastAPI + uvicorn (REST API)
+- MCP Python SDK (stdio tool server)
 - AST + regex parsing
-- VSCode (future MCP integration)
