@@ -536,3 +536,102 @@ tests/
 - [ ] Multi-repository support
 - [ ] Agent memory
 - [ ] Performance optimizations (embedding cache, async pipeline)
+
+# Project Name options:
+
+## Memory / Context
+
+- DeepMemory
+- MemoryCore
+- MemoryForge
+- MemoryEngine
+- ContextMemory
+- ContextCore
+- ContextEngine
+- ContextFlow
+- RecallEngine
+- RecallCore
+- SmartMemory
+- InfiniteMemory
+
+## Vector / Embeddings
+
+- DeepVector
+- VectorCore
+- VectorForge
+- VectorEngine
+- VectorFlow
+- VectorSearch
+- VectorIQ
+- VectorMind
+- VectorBridge
+- VectorStore
+- VectorWorks
+- VectorGrid
+
+## RAG
+
+- RAGCore
+- RAGEngine
+- RAGForge
+- RAGFlow
+- RAGStack
+- RAGBridge
+- RAGMemory
+- SmartRAG
+- NextRAG
+- OmniRAG
+- RAGWorks
+- RAGStudio
+
+## Graph / Knowledge
+
+- GraphMind
+- GraphMemory
+- GraphCore
+- GraphEngine
+- KnowledgeCore
+- KnowledgeForge
+- KnowledgeFlow
+- KnowledgeStack
+- KnowledgeMind
+- DeepKnowledge
+
+## Enterprise / Premium
+
+- CortexAI
+- CortexMemory
+- CortexVector
+- AtlasAI
+- AtlasMemory
+- AtlasSemantic
+- AtlasVector
+- NovaSemantic
+- NovaMemory
+- NovaVector
+- QuantumSemantic
+- QuantumMemory
+- QuantumVector
+
+## Short & Brandable
+
+- Memora
+- Semora
+- Semanta
+- Vectra
+- Vectis
+- Vectora
+- Nexora
+- NexisAI
+- Kortex
+- Lexora
+- Omnivec
+- Infera
+- Cognivex
+- Cognira
+- Intellivec
+- Memix
+- Semix
+- VectorIQ
+- ContextIQ
+- SearchIQ

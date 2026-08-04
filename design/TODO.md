@@ -53,6 +53,7 @@ This file tracks actionable engineering tasks that are not yet complete.
 - [ ] Add `agents-framework-setup` console script entry point
 - [ ] Update `README.md` with one-command install instructions for each platform
 - [ ] Evaluate `uvx` / PyPI publishing path
+- [ ] Rename the project to somehting more sellable
 
 ## Priority 6: Chunkers per file
 
