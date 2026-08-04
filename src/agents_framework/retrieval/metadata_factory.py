@@ -4,6 +4,7 @@ from agents_framework.models.chunk_metadata import ChunkMetadata
 from agents_framework.models.markdown_chunk_metadata import MarkdownChunkMetadata
 from agents_framework.models.python_chunk_metadata import PythonChunkMetadata
 from agents_framework.models.csharp_chunk_metadata import CSharpChunkMetadata
+from agents_framework.models.typescript_chunk_metadata import TypeScriptChunkMetadata
 
 
 class MetadataFactory:
@@ -13,6 +14,7 @@ class MetadataFactory:
         "MarkdownChunkMetadata": MarkdownChunkMetadata,
         "PythonChunkMetadata": PythonChunkMetadata,
         "CSharpChunkMetadata": CSharpChunkMetadata,
+        "TypeScriptChunkMetadata": TypeScriptChunkMetadata,
     }
 
     @classmethod

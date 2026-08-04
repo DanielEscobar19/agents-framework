@@ -2,6 +2,7 @@ import argparse
 import json
 
 from agents_framework.retrieval.retrieval_service import RetrievalService
+from agents_framework.api.schemas import SearchFilter
 from config.config import load_config
 from app import App
 
@@ -26,6 +27,15 @@ def main():
         action="store_true",
         help="Return assembled context string instead of JSON results",
     )
+    retrieve_parser.add_argument(
+        "--language", help="Filter by language (e.g. python, csharp, typescript)"
+    )
+    retrieve_parser.add_argument(
+        "--element-type", help="Filter by element type (e.g. method, class, function)"
+    )
+    retrieve_parser.add_argument("--file-path", help="Filter to an exact file path")
+    retrieve_parser.add_argument("--class-name", help="Filter by class name")
+    retrieve_parser.add_argument("--namespace", help="Filter by namespace (C# only)")
 
     args = parser.parse_args()
     config = load_config()
@@ -37,11 +47,22 @@ def main():
     elif args.command == "retrieve":
         service = RetrievalService(config)
 
+        search_filter = SearchFilter(
+            language=args.language,
+            element_type=args.element_type,
+            file_path=args.file_path,
+            class_name=args.class_name,
+            namespace=args.namespace,
+        )
+
         if args.context:
-            print(service.build_context(args.query))
+            print(service.build_context(args.query, search_filter=search_filter))
         else:
             ctx = service.retrieve(
-                args.query, limit=args.top_k, min_score=args.min_score
+                args.query,
+                limit=args.top_k,
+                min_score=args.min_score,
+                search_filter=search_filter,
             )
             for r in ctx.results:
                 print(

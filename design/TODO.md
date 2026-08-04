@@ -22,6 +22,7 @@ This file tracks actionable engineering tasks that are not yet complete.
 - [x] Implement ranking and context assembly pipeline
 - [x] Implement end-to-end RAG request flow (`question -> retrieve -> rank -> context -> answer`)
 - [x] Expose indexing and retrieval operations through MCP tools
+- [x] Add payload filtering to retrieval (language, element_type, file_path, class_name, namespace) via `SearchFilter` across API and MCP
 
 ## Priority 2: Indexing Performance and Reliability
 
@@ -52,6 +53,15 @@ This file tracks actionable engineering tasks that are not yet complete.
 - [ ] Add `agents-framework-setup` console script entry point
 - [ ] Update `README.md` with one-command install instructions for each platform
 - [ ] Evaluate `uvx` / PyPI publishing path
+
+## Priority 6: Chunkers per file
+
+- [ ] Add chunker for json files
+- [ ] Add chunker for HTML files
+- [ ] Add chunker for css/scss files
+- [ ] Add chunker for tsx files
+- [ ] Improve the C# chunker
+- [ ] Improve the Python chunker
 
 ## Notes
 

@@ -96,3 +96,50 @@ def test_build_context_returns_string():
     result = svc.build_context("query")
     assert isinstance(result, str)
     assert "def bar(): pass" in result
+
+
+def test_retrieve_passes_query_filter_to_retriever():
+    from agents_framework.api.schemas import SearchFilter
+    from unittest.mock import patch
+
+    svc, mock_retriever = make_service(retriever_results=[make_result()])
+    sf = SearchFilter(language="python")
+
+    with patch(
+        "agents_framework.retrieval.retrieval_service.build_filter"
+    ) as mock_build:
+        from qdrant_client.models import Filter
+
+        sentinel = Filter(must=[])
+        mock_build.return_value = sentinel
+
+        svc.retrieve("query", search_filter=sf)
+
+        mock_build.assert_called_once_with(sf)
+        _, kwargs = mock_retriever.search.call_args
+        assert kwargs["query_filter"] is sentinel
+
+
+def test_soft_fallback_preserves_query_filter():
+    from agents_framework.api.schemas import SearchFilter
+    from unittest.mock import patch
+
+    cfg = make_config(score_threshold=0.9)
+    svc, mock_retriever = make_service(config=cfg)
+    mock_retriever.search.side_effect = [[], [make_result(score=0.3)]]
+
+    sf = SearchFilter(element_type="method")
+
+    with patch(
+        "agents_framework.retrieval.retrieval_service.build_filter"
+    ) as mock_build:
+        from qdrant_client.models import Filter
+
+        sentinel = Filter(must=[])
+        mock_build.return_value = sentinel
+
+        svc.retrieve("query", search_filter=sf)
+
+        # both calls must carry the same filter
+        for call in mock_retriever.search.call_args_list:
+            assert call.kwargs["query_filter"] is sentinel

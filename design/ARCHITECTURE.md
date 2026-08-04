@@ -129,12 +129,29 @@ Handles:
 
 ## 7. RetrievalService
 
-Facade over the Retriever that applies `top_k` from config and filters empty results.
+Facade over the Retriever that applies `top_k` from config, filters empty results, and builds Qdrant filter conditions.
 
 Exposes:
 
-- `retrieve(query)` → ranked `RetrievalContext`
-- `build_context(query)` → token-bounded context string via `ContextBuilder`
+- `retrieve(query, limit?, min_score?, search_filter?)` → ranked `RetrievalContext`
+- `build_context(query, search_filter?)` → token-bounded context string via `ContextBuilder`
+- Soft fallback: retries with `min_score=0.0` when threshold drops all results (filter is preserved)
+
+## 7a. FilterBuilder
+
+Converts a `SearchFilter` into a Qdrant `Filter(must=[...])` for payload-level filtering.
+
+Supported filter fields:
+
+| Field          | Qdrant payload key    | Match type |
+| -------------- | --------------------- | ---------- |
+| `language`     | `metadata.language`   | Exact      |
+| `element_type` | `element_type`        | Exact      |
+| `file_path`    | `file`                | Exact      |
+| `class_name`   | `metadata.class_name` | Exact      |
+| `namespace`    | `metadata.namespace`  | Exact      |
+
+Returns `None` when all fields are `None` (no filter applied).
 
 ## 8. ContextBuilder
 
@@ -152,9 +169,11 @@ HTTP interface for retrieval and indexing.
 
 Endpoints:
 
-- `POST /retrieval/retrieve` — returns ranked results as JSON
-- `POST /retrieval/context` — returns assembled context string
+- `POST /retrieval/retrieve` — returns ranked results as JSON; accepts optional `filter: SearchFilter`
+- `POST /retrieval/context` — returns assembled context string; accepts optional `filter: SearchFilter`
 - `POST /indexing/index` — triggers incremental indexer for a given `root_path`
+
+`SearchFilter` fields: `language`, `element_type`, `file_path`, `class_name`, `namespace` (all optional).
 
 Entrypoint: `python serve.py`
 
@@ -164,8 +183,8 @@ Exposes retrieval and indexing as MCP tools via stdio transport.
 
 Tools:
 
-- `search_code(query, top_k?)` — semantic chunk search
-- `get_context(query)` — token-bounded context string
+- `search_code(query, top_k?, language?, element_type?, file_path?, class_name?)` — semantic chunk search with optional payload filtering
+- `get_context(query, language?, file_path?)` — token-bounded context string with optional filtering
 - `index_codebase(root_path)` — incremental indexer trigger
 
 Compatible with VS Code Copilot and Claude Desktop via stdio MCP configuration.

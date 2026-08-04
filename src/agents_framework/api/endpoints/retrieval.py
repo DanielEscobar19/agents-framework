@@ -14,7 +14,7 @@ router = APIRouter(prefix="/retrieval", tags=["retrieval"])
 @router.post("/retrieve", response_model=RetrieveResponse)
 async def retrieve(body: RetrieveRequest, request: Request):
     service = request.app.state.retrieval_service
-    ctx = service.retrieve(body.query, limit=body.top_k)
+    ctx = service.retrieve(body.query, limit=body.top_k, search_filter=body.filter)
     return RetrieveResponse(
         query=ctx.query,
         results=[
@@ -36,5 +36,5 @@ async def context(body: ContextRequest, request: Request):
     service = request.app.state.retrieval_service
     return ContextResponse(
         query=body.query,
-        context=service.build_context(body.query),
+        context=service.build_context(body.query, search_filter=body.filter),
     )

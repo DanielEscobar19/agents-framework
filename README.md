@@ -179,6 +179,27 @@ Return assembled context string:
 python main.py retrieve --query "chunking strategy" --context
 ```
 
+Filter results by language, element type, file, class, or namespace:
+
+```bash
+# only Python results
+python main.py retrieve --query "handle request" --language python
+
+# only C# methods
+python main.py retrieve --query "get brand" --language csharp --element-type method
+
+# scope to a specific file
+python main.py retrieve --query "config loading" --file-path "config/config.py"
+
+# filter by class name
+python main.py retrieve --query "embed text" --class-name "OllamaEmbedder"
+
+# C# namespace filter
+python main.py retrieve --query "brand validation" --namespace "BrandCheck.Business"
+```
+
+All filter flags are optional and combinable. Omitting them returns results across all languages and types.
+
 ## REST API
 
 Start the FastAPI server:
@@ -196,7 +217,11 @@ Endpoints:
 Example request body for `/retrieve`:
 
 ```json
-{ "query": "how does incremental indexing work?", "top_k": 5 }
+{
+  "query": "how does incremental indexing work?",
+  "top_k": 5,
+  "filter": { "language": "python" }
+}
 ```
 
 ## MCP Server
