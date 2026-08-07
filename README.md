@@ -635,3 +635,8 @@ tests/
 - VectorIQ
 - ContextIQ
 - SearchIQ
+
+# Existing embeddingsprojects:
+
+Article about it: [Shopify ceo](https://tonylee.im/es-LA/blog/shopify-ceo-qmd-claude-code-session-memory/)
+Github repo: [Repo](https://github.com/tobi/qmd)
